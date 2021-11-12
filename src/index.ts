@@ -106,7 +106,6 @@ export default class CSV {
             crlfDelay: Infinity
         });
         const allFields: string[] = [];
-        const fieldPositions: any = {};
 
         let linePos = 0;
         let tmpFile = `${this.filePath}.tmp`;
@@ -125,9 +124,6 @@ export default class CSV {
                 })
                 //append new field names
                 allFields.push(...oldFields, ...newFields);
-                for (let field of allFields) {
-                    fieldPositions[field] = allFields.indexOf(field)
-                }
                 if (dynamic) {
                     const chunk = `${allFields.join(this.sep)}\n`;
                     const buf = Buffer.alloc(chunk.length, chunk)
@@ -160,17 +156,17 @@ export default class CSV {
 //example
 (async () => {
     const csv = new CSV('./files/test.csv');
-    /* console.log(await csv.read(['name', 'url', 'lol', 'date'], {
+    console.log(await csv.read(['name', 'url', 'price', 'date'], {
         excludeEmpty: true,
         types: {
-            'lol': 'number',
-            'date': 'date'
+            price: 'number',
+            date: 'date'
         }
-    })) */
-    await csv.write(['name', 'url', 'lol', 'date'], [
+    }))
+    /* await csv.write(['name', 'url', 'price', 'date'], [
         { name: 'hehe', url: "exp.com", date: new Date() },
-        { name: 'lala', url: "damn.net", lol: 15 }
+        { name: 'lala', url: "damn.net", price: 15 }
     ], {
         dynamic: true
-    })
+    }) */
 })()
