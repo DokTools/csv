@@ -87,6 +87,11 @@ export default class CSV {
         return data;
     }
 
+    static writeLine(o: number, text: string) {
+        const buf = Buffer.alloc(text.length, text)
+        fs.writeSync(o, buf, undefined, buf.length, undefined);
+    }
+
     /**
      * 
      * @param {String[]} fields csv header fields
@@ -106,48 +111,35 @@ export default class CSV {
             crlfDelay: Infinity
         });
         const allFields: string[] = [];
-
         let linePos = 0;
         let tmpFile = `${this.filePath}.tmp`;
-        let o
+        let o: number
         if (dynamic) {
             o = fs.openSync(tmpFile, "w+")
         } else {
+            //append new data
             o = fs.openSync(this.filePath, "a+")
         }
         for await (const line of rl) {
             if (linePos++ === 0) {
                 //set header
                 let oldFields = line.split(this.sep)
-                let newFields = fields.filter(field => {
-                    return !oldFields.includes(field)
-                })
+                let newFields = fields.filter(field => !oldFields.includes(field))
                 //append new field names
                 allFields.push(...oldFields, ...newFields);
                 if (dynamic) {
-                    const chunk = `${allFields.join(this.sep)}\n`;
-                    const buf = Buffer.alloc(chunk.length, chunk)
-                    fs.writeSync(o, buf, undefined, buf.length, undefined)
+                    CSV.writeLine(o, `${allFields.join(this.sep)}\n`);
                     continue;
                 } else {
                     break;
                 }
             }
-            const toWrite = `${line}\n`
-            const buf = Buffer.alloc(toWrite.length, toWrite)
-            fs.writeSync(o, buf, undefined, buf.length, undefined)
+            CSV.writeLine(o, `${line}\n`);
         }
-        let allFieldsIndex = [...new Array(allFields.length).keys()]
-
+        const allFieldsIndex = [...new Array(allFields.length).keys()]
         //time to append new data
-        for (let json of data) {
-            const toWrite = `${allFieldsIndex.map(index => json[allFields[index]] || '').join(this.sep)}\n`
-            const buf = Buffer.alloc(toWrite.length, toWrite)
-            fs.writeSync(o, buf, undefined, buf.length, undefined)
-        }
-        if (dynamic) {
-            fs.renameSync(tmpFile, this.filePath);
-        }
+        data.forEach((json) => CSV.writeLine(o, `${allFieldsIndex.map(index => json[allFields[index]] || '').join(this.sep)}\n`))
+        dynamic && fs.renameSync(tmpFile, this.filePath)
         rl.close()
         return true;
     }
@@ -156,17 +148,17 @@ export default class CSV {
 //example
 (async () => {
     const csv = new CSV('./files/test.csv');
-    console.log(await csv.read(['name', 'url', 'price', 'date'], {
+    /* console.log(await csv.read(['name', 'url', 'price', 'date'], {
         excludeEmpty: true,
         types: {
             price: 'number',
             date: 'date'
         }
-    }))
-    /* await csv.write(['name', 'url', 'price', 'date'], [
+    })) */
+    await csv.write(['name', 'url', 'price', 'date'], [
         { name: 'hehe', url: "exp.com", date: new Date() },
         { name: 'lala', url: "damn.net", price: 15 }
     ], {
         dynamic: true
-    }) */
+    })
 })()
