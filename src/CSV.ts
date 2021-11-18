@@ -4,11 +4,24 @@ import readline from 'readline';
 
 interface ReadOptions {
     excludeEmpty?: boolean;
-    types?: any;
+    types?: object;
 }
 
 interface WriteOptions {
     dynamic?: boolean;
+}
+
+interface ObjectOfStrings {
+    [name: string]: string;
+}
+
+interface FunctionOfStringParam {
+    [name: string]: (value: string) => any
+}
+
+interface ParserOptions {
+    excludeEmpty?: string
+    types?: ObjectOfStrings
 }
 
 interface CSVOptions {
@@ -29,7 +42,7 @@ export default class CSV {
     }
 
     setFieldsIndex(data: string[]) {
-        for (let field of this.fields) {
+        for (const field of this.fields) {
             this.fieldsIndex.push(data.indexOf(field));
         }
     }
@@ -38,15 +51,15 @@ export default class CSV {
         this.fields = fields;
     }
 
-    lineResolvers: Function[] = [];
+    lineResolvers: any[] = [];
 
-    defaultLineParser(data: string[], options: any) {
-        const toReturn: any = {};
+    defaultLineParser(data: string[], options: ParserOptions) {
+        const toReturn: ObjectOfStrings = {};
         this.fieldsIndex.forEach((index, position) => {
             let value = data[index]
             if (value || !options.excludeEmpty) {
-                let key = this.fields[position];
-                let { types } = options;
+                const key = this.fields[position];
+                const { types } = options;
                 if (value && types && types[key] && typeof this.typesToParsers[types[key]] === "function") {
                     value = this.typesToParsers[types[key]](value);
                 }
@@ -56,7 +69,7 @@ export default class CSV {
         return toReturn;
     }
 
-    typesToParsers: any = {
+    typesToParsers: FunctionOfStringParam = {
         'number': parseFloat,
         'date': (value: any) => {
             if (/\d+$/.test(value)) {
@@ -67,15 +80,15 @@ export default class CSV {
     }
 
     splitLine(line: string) {
-        let columns = line.split(this.sep)
+        const columns = line.split(this.sep)
         let pos = 0
-        for (let col of columns) {
+        for (const col of columns) {
             if (col[0] === "\"") {
                 for (let i = pos; i < columns.length; i++) {
-                    let secondCol = columns[i]
-                    let lastQuoteIndex = secondCol && secondCol.lastIndexOf("\"")
+                    const secondCol = columns[i]
+                    const lastQuoteIndex = secondCol && secondCol.lastIndexOf("\"")
                     if (lastQuoteIndex && lastQuoteIndex !== -1) {
-                        let newCol = columns.slice(pos, pos + (i + 1)).join(this.sep)
+                        const newCol = columns.slice(pos, pos + (i + 1)).join(this.sep)
                         columns.splice(pos, i)
                         columns[pos] = newCol
                     }
@@ -95,14 +108,14 @@ export default class CSV {
     async read(fields: string[], options: ReadOptions = { excludeEmpty: false, types: {} }) {
         this.setFields(fields);
         const readStream = fs.createReadStream(path.resolve(this.filePath));
-        const data: any[] = [];
+        const data: object[] = [];
         const rl = readline.createInterface({
             input: readStream,
             crlfDelay: Infinity
         });
         let linePos = 0;
         for await (const line of rl) {
-            let columns = this.splitLine(line)
+            const columns = this.splitLine(line)
             const info = (this.lineResolvers[linePos] || this.defaultLineParser).bind(this)(columns, options)
             if (info) {
                 data.push(info);
@@ -137,7 +150,7 @@ export default class CSV {
         });
         const allFields: string[] = [];
         let linePos = 0;
-        let tmpFile = `${this.filePath}.tmp`;
+        const tmpFile = `${this.filePath}.tmp`;
         let o: number
         if (dynamic) {
             o = fs.openSync(tmpFile, "w+")
@@ -148,8 +161,8 @@ export default class CSV {
         for await (const line of rl) {
             if (linePos++ === 0) {
                 //set header
-                let oldFields = this.splitLine(line)
-                let newFields = fields.filter(field => !oldFields.includes(field))
+                const oldFields = this.splitLine(line)
+                const newFields = fields.filter(field => !oldFields.includes(field))
                 //append new field names
                 allFields.push(...oldFields, ...newFields);
                 if (dynamic) {
