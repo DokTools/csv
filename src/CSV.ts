@@ -4,7 +4,7 @@ import readline from 'readline';
 
 interface ReadOptions {
     excludeEmpty?: boolean;
-    types?: object;
+    types?: any;
 }
 
 interface WriteOptions {
@@ -108,7 +108,7 @@ export default class CSV {
     async read(fields: string[], options: ReadOptions = { excludeEmpty: false, types: {} }) {
         this.setFields(fields);
         const readStream = fs.createReadStream(path.resolve(this.filePath));
-        const data: object[] = [];
+        const data: any[] = [];
         const rl = readline.createInterface({
             input: readStream,
             crlfDelay: Infinity
