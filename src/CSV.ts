@@ -5,6 +5,7 @@ import readline from 'readline';
 interface ReadOptions {
     excludeEmpty?: boolean;
     types?: any;
+    ticks?: boolean;
 }
 
 interface WriteOptions {
@@ -99,30 +100,64 @@ export default class CSV {
         return columns
     }
 
+    async readLine(line: string, pos: number, options: ReadOptions) {
+        const columns = this.splitLine(line)
+        return (this.lineResolvers[pos] || this.defaultLineParser).bind(this)(columns, options)
+    }
+
     /**
-    * 
-    * @param {Array} fields 
-    * @param {Object} options additional options
-    * @param {Boolean} options.excludeEmpty dont include empty properties
-    */
-    async read(fields: string[], options: ReadOptions = { excludeEmpty: false, types: {} }) {
-        this.setFields(fields);
-        const readStream = fs.createReadStream(path.resolve(this.filePath));
-        const data: any[] = [];
-        const rl = readline.createInterface({
-            input: readStream,
-            crlfDelay: Infinity
-        });
+     * 
+     * @param {readline.ReadLine}
+     * @return {Array<Object>}
+     */
+    async readNormal(rl: readline.Interface, options: ReadOptions) {
+        const data = []
         let linePos = 0;
         for await (const line of rl) {
-            const columns = this.splitLine(line)
-            const info = (this.lineResolvers[linePos] || this.defaultLineParser).bind(this)(columns, options)
+            const info = await this.readLine(line, linePos, options);
             if (info) {
                 data.push(info);
             }
             linePos += 1;
         }
         return data;
+    }
+
+    /**
+     * 
+     * @param rl 
+     * @param options 
+     * @return {AsyncGenerator}
+     */
+    async *readTicks(rl: readline.Interface, options: ReadOptions) {
+        let linePos = 0;
+        for await (const line of rl) {
+            const info = await this.readLine(line, linePos, options);
+            if (info) {
+                yield info
+            }
+            linePos += 1;
+        }
+    }
+
+    /**
+    * 
+    * @param {Array} fields 
+    * @param {Object} options additional options
+    * @param {Boolean} options.excludeEmpty dont include empty properties
+    * @returns {Array|AsyncGenerator}
+    */
+    async read(fields: string[], options: ReadOptions = { excludeEmpty: false, types: {} }): Promise<any> {
+        this.setFields(fields);
+        const readStream = fs.createReadStream(path.resolve(this.filePath));
+        const rl = readline.createInterface({
+            input: readStream,
+            crlfDelay: Infinity
+        });
+        if (options.ticks) {
+            return this.readTicks(rl, options);
+        }
+        return this.readNormal(rl, options);
     }
 
     static writeLine(o: number, text: string) {
@@ -176,7 +211,7 @@ export default class CSV {
         }
         const allFieldsIndex = [...new Array(allFields.length).keys()]
         //time to append new data
-        data.forEach((json) => CSV.writeLine(o, `${allFieldsIndex.map(index => json[allFields[index]] || '').join(this.sep)}\n`))
+        for (let json of data) CSV.writeLine(o, `${allFieldsIndex.map(index => json[allFields[index]]).join(this.sep)}\n`)
         dynamic && fs.renameSync(tmpFile, this.filePath)
         rl.close()
         return true;

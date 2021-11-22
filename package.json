@@ -2,9 +2,7 @@
   "name": "@ilias0x/csv",
   "version": "1.0.0",
   "main": "src/index.ts",
-  "scripts": {
-    "test": "ts-node src"
-  },
+  "scripts": {},
   "keywords": [],
   "author": "Ilias",
   "license": "ISC",
