@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import readline from 'readline';
+import wc from './wc';
 
 interface ReadOptions {
     excludeEmpty?: boolean;
@@ -46,6 +47,7 @@ export default class CSV {
         for (const field of this.fields) {
             this.fieldsIndex.push(data.indexOf(field));
         }
+        return undefined; //so we dont trigger yield in readTicks
     }
 
     setFields(fields: string[]) {
@@ -89,8 +91,8 @@ export default class CSV {
                     const secondCol = columns[i]
                     const lastQuoteIndex = secondCol && secondCol.lastIndexOf("\"")
                     if (lastQuoteIndex && lastQuoteIndex !== -1) {
-                        const newCol = columns.slice(pos, pos + (i + 1)).join(this.sep)
-                        columns.splice(pos, i)
+                        const newCol = columns.slice(pos, (i + 1)).join(this.sep)
+                        columns.splice(pos, i - pos)
                         columns[pos] = newCol
                     }
                 }
@@ -98,6 +100,10 @@ export default class CSV {
             pos++
         }
         return columns
+    }
+
+    async getLines() {
+        return (await wc(this.filePath, { l: true })).l
     }
 
     async readLine(line: string, pos: number, options: ReadOptions) {
@@ -116,7 +122,10 @@ export default class CSV {
         for await (const line of rl) {
             const info = await this.readLine(line, linePos, options);
             if (info) {
-                data.push(info);
+                data.push({
+                    _value: info,
+                    pos: linePos + 1
+                });
             }
             linePos += 1;
         }
@@ -134,7 +143,10 @@ export default class CSV {
         for await (const line of rl) {
             const info = await this.readLine(line, linePos, options);
             if (info) {
-                yield info
+                yield {
+                    _value: info,
+                    pos: linePos + 1
+                }
             }
             linePos += 1;
         }
@@ -145,6 +157,8 @@ export default class CSV {
     * @param {Array} fields 
     * @param {Object} options additional options
     * @param {Boolean} options.excludeEmpty dont include empty properties
+    * @param {Object} options.types specify each column type to parse it automatically
+    * @param {Boolean} options.ticks specify if you want to get the whole data as false or iterate line by line using JavaScript Generators
     * @returns {Array|AsyncGenerator}
     */
     async read(fields: string[], options: ReadOptions = { excludeEmpty: false, types: {} }): Promise<any> {
@@ -203,15 +217,14 @@ export default class CSV {
                 if (dynamic) {
                     CSV.writeLine(o, `${allFields.join(this.sep)}\n`);
                     continue;
-                } else {
-                    break;
                 }
+                break;
             }
             CSV.writeLine(o, `${line}\n`);
         }
         const allFieldsIndex = [...new Array(allFields.length).keys()]
         //time to append new data
-        for (let json of data) CSV.writeLine(o, `${allFieldsIndex.map(index => json[allFields[index]]).join(this.sep)}\n`)
+        for (const json of data) CSV.writeLine(o, `${allFieldsIndex.map(index => json[allFields[index]]).join(this.sep)}\n`)
         dynamic && fs.renameSync(tmpFile, this.filePath)
         rl.close()
         return true;
