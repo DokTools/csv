@@ -7,52 +7,60 @@ import readline from 'readline';
 const platform = os.platform();
 
 const optionToIndex: any = {
-    'l': 0,
-    'w': 1,
-    'c': 2
-}
+  l: 0,
+  w: 1,
+  c: 2,
+};
 
 interface WcOptions {
-    [name: string]: boolean
+  [name: string]: boolean;
 }
 
 /**
- * 
- * @param {string} filePath 
- * @param {object} options 
+ *
+ * @param {string} filePath
+ * @param {object} options
  * @param {boolean} l lines
  * @param {boolean} w words
  * @param {boolean} c chars
- * @returns 
+ * @returns
  */
 export default async function wc(filePath: string, options: WcOptions) {
-    if (platform === 'win32') {
-        const readStream = fs.createReadStream(path.resolve(filePath));
-        const rl = readline.createInterface({
-            input: readStream,
-            crlfDelay: Infinity
-        });
-        let count = 0;
-        for await (const line of rl) {
-            count++;
-        }
-        return {
-            l: count - 1
-        }
-    }
-
-    const fields = Object.entries(options).filter(([key, value]) => value && optionToIndex[key] !== undefined).map(([key, value]) => {
-        return key;
+  const fields = Object.entries(options)
+    .filter(([key, value]) => value && optionToIndex[key] !== undefined)
+    .map(([key, value]) => {
+      return key;
+    })
+    .sort((a, b) => optionToIndex[a] - optionToIndex[b]);
+  if (platform === 'win32') {
+    const readStream = fs.createReadStream(path.resolve(filePath));
+    const rl = readline.createInterface({
+      input: readStream,
+      crlfDelay: Infinity,
     });
-    const cmd = `wc ${fields.map(x => `-${x}`).join(' ')} ${filePath}`;
-    const stdout = execSync(cmd).toString().trim()
-    const splited = stdout.split(/\s{1,}/)
-    const toReturn: any = {}
-    for (const field of fields) {
-        toReturn[field] = parseInt(splited[optionToIndex[field]])
+    let r: any = { l: 0, w: 0, c: 0 };
+    for await (const line of rl) {
+      if (options.l) r.l++;
+      let words;
+      if (options.w) r.w += (words = line.split(/\s+/)).length;
     }
-    if (toReturn.l) {
-        toReturn.l -= 1;
+    const stats = fs.statSync(filePath);
+    if (options.c) r.c += stats.size;
+    const toReturn: any = {};
+    for (let field of fields) {
+      toReturn[field] = r[field];
     }
     return toReturn;
+  }
+
+  const cmd = `wc ${fields.map((x) => `-${x}`).join(' ')} ${filePath}`;
+  const stdout = execSync(cmd).toString().trim();
+  const splited = stdout.split(/\s{1,}/);
+  const toReturn: any = {};
+  let i = 0;
+  for (const field of fields) {
+    toReturn[field] = parseInt(splited[i]);
+    i++;
+  }
+  return toReturn;
 }

@@ -1,13 +1,30 @@
 {
   "name": "@ilias0x/csv",
   "version": "1.0.0",
-  "main": "src/index.ts",
-  "scripts": {},
-  "keywords": [],
-  "author": "Ilias",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "jest --config jestconfig.json",
+    "build": "tsc",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "tslint -p tsconfig.json",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
+    "preversion": "npm run lint",
+    "version": "npm run format && git add -A src",
+    "postversion": "git push && git push --tags"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "keywords": ["csv", "parser", "csv parser", "csv tool"],
+  "author": "ilias0x",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^16.11.7"
+    "@types/node": "^16.11.7",
+    "prettier": "^2.4.1",
+    "tslint": "^6.1.3",
+    "tslint-config-prettier": "^1.18.0"
   },
   "dependencies": {},
   "repository": {
