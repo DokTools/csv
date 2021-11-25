@@ -38,22 +38,21 @@ export default async function wc(filePath: string, options: WcOptions) {
       input: readStream,
       crlfDelay: Infinity,
     });
-    let r: any = { l: 0, w: 0, c: 0 };
+    const r: any = { l: 0, w: 0, c: 0 };
     for await (const line of rl) {
       if (options.l) r.l++;
-      let words;
-      if (options.w) r.w += (words = line.split(/\s+/)).length;
+      if (options.w) r.w += line.split(/\s+/).length;
     }
     const stats = fs.statSync(filePath);
     if (options.c) r.c += stats.size;
     const toReturn: any = {};
-    for (let field of fields) {
+    for (const field of fields) {
       toReturn[field] = r[field];
     }
     return toReturn;
   }
 
-  const cmd = `wc ${fields.map((x) => `-${x}`).join(' ')} ${filePath}`;
+  const cmd = `wc ${fields.map((x) => `-${x}`).join(' ')} "${filePath}"`;
   const stdout = execSync(cmd).toString().trim();
   const splited = stdout.split(/\s{1,}/);
   const toReturn: any = {};
