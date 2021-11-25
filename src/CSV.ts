@@ -86,10 +86,15 @@ export default class CSV {
     info.line = data.line;
   }
 
+  columnsGetter({ info, data }: any) {
+    info.columns = data.columns;
+  }
+
   gettersCollection: any = {
     value: this.valueGetter,
     pos: this.posGetter,
     line: this.lineGetter,
+    columns: this.columnsGetter
   };
 
   defaultGetters: string[] = ['value'];
@@ -157,13 +162,13 @@ export default class CSV {
    */
   async readNormal(rl: readline.Interface, options: ReadOptions) {
     const data: InfoInterface[] = [];
-    let linePos = 0;
+    let pos = 0;
     for await (const line of rl) {
-      const info = await this.readLine(line, linePos, options);
+      const info = await this.readLine(line, pos, options);
       if (info) {
         data.push(info);
       }
-      linePos += 1;
+      pos += 1;
     }
     return data;
   }
@@ -175,13 +180,13 @@ export default class CSV {
    * @return {AsyncGenerator}
    */
   async *readTicks(rl: readline.Interface, options: ReadOptions) {
-    let linePos = 0;
+    let pos = 0;
     for await (const line of rl) {
-      const info = await this.readLine(line, linePos, options);
+      const info = await this.readLine(line, pos, options);
       if (info) {
         yield info;
       }
-      linePos += 1;
+      pos += 1;
     }
   }
 
@@ -198,11 +203,7 @@ export default class CSV {
   async read(fields: string[], options: ReadOptions = { excludeEmpty: false, types: {} }): Promise<any> {
     if (!options.getters) options.getters = this.defaultGetters;
     this.setFields(fields);
-    const readStream = fs.createReadStream(path.resolve(this.filePath));
-    const rl = readline.createInterface({
-      input: readStream,
-      crlfDelay: Infinity,
-    });
+    const rl = this.createInterface(this.filePath)
     if (options.ticks) {
       return this.readTicks(rl, options);
     }
@@ -227,23 +228,13 @@ export default class CSV {
     if (!fs.existsSync(this.filePath) || fs.statSync(this.filePath).size === 0) {
       fs.writeFileSync(this.filePath, `${fields.join(this.sep)}\n`);
     }
-    const readStream = fs.createReadStream(path.resolve(this.filePath));
-    const rl = readline.createInterface({
-      input: readStream,
-      crlfDelay: Infinity,
-    });
+    const rl = this.createInterface(this.filePath)
     const allFields: string[] = [];
-    let linePos = 0;
     const tmpFile = `${this.filePath}.tmp`;
-    let o: number;
-    if (dynamic) {
-      o = fs.openSync(tmpFile, 'w+');
-    } else {
-      //append new data
-      o = fs.openSync(this.filePath, 'a+');
-    }
+    const o = fs.openSync.apply(null, dynamic ? [tmpFile, 'w+'] : [this.filePath, 'a+']);
+    let pos = 0;
     for await (const line of rl) {
-      if (linePos++ === 0) {
+      if (pos++ === 0) {
         //set header
         const oldFields = this.splitLine(line);
         const newFields = fields.filter((field) => !oldFields.includes(field));
@@ -264,5 +255,13 @@ export default class CSV {
     dynamic && fs.renameSync(tmpFile, this.filePath);
     rl.close();
     return true;
+  }
+
+  createInterface(filePath: string) {
+    const readStream = fs.createReadStream(path.resolve(filePath));
+    return readline.createInterface({
+      input: readStream,
+      crlfDelay: Infinity,
+    })
   }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "@ilias0x/csv",
+  "name": "csv0x",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

@@ -10,7 +10,7 @@ import CSV from "./CSV";
             'price': 'number',
             'date': 'date'
         },
-        getters: ['value', 'pos', 'line']
+        getters: ['value', 'pos']
     });
     while (true) {
         const tick = await data.next()
