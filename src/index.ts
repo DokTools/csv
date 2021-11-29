@@ -1,2 +1,2 @@
 import CSV from "./CSV";
-export default CSV;
+export = CSV;
