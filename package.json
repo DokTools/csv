@@ -1,32 +1,38 @@
 {
   "name": "csv0x",
   "version": "1.0.0",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "format": "prettier --write \"src/**/*.ts\""
-  },
-  "files": [
-    "dist/**/*"
-  ],
-  "keywords": ["csv", "parser", "csv parser", "csv tool"],
-  "author": "ilias0x",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/node": "^16.11.7",
-    "prettier": "^2.4.1",
-    "tslint": "^6.1.3",
-    "tslint-config-prettier": "^1.18.0"
+  "description": "",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "directories": {
+    "lib": "./lib",
+    "src": "./src",
+    "test": "./src"
   },
   "dependencies": {},
+  "devDependencies": {
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.11.10",
+    "chai": "^4.3.4",
+    "mocha": "^9.1.3",
+    "prettier": "^2.4.1",
+    "ts-node": "^10.4.0",
+    "tslint": "^6.1.3",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^4.5.2"
+  },
+  "scripts": {
+    "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha"
+  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ilias2026/csv.git"
+    "url": "git+https://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@github.com/ilias2026/csv.git"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "bugs": {
     "url": "https://github.com/ilias2026/csv/issues"
   },
-  "homepage": "https://github.com/ilias2026/csv#readme",
-  "description": ""
+  "homepage": "https://github.com/ilias2026/csv#readme"
 }
