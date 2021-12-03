@@ -6,8 +6,8 @@ it('Read from file', async function () {
         excludeEmpty: true,
         ticks: true,
         types: {
-            'price': 'number',
-            'date': 'date'
+            price: 'number',
+            date: 'date'
         },
         getters: ['value', 'pos']
     });

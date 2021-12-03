@@ -41,11 +41,11 @@ export default class CSV {
     return (await wc(this.filePath, { w: true })).w;
   }
 
-  async read(fields: string[], options: ReadOptions) {
+  async read(fields: string[], options?: ReadOptions) {
     return this.reader.read(fields, options);
   }
 
-  async write(fields: string[], data: any[], options: WriteOptions) {
+  async write(fields: string[], data: any[], options?: WriteOptions) {
     return this.writer.write(fields, data, options);
   }
 }
