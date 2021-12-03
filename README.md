@@ -53,7 +53,7 @@ const data = await csv.read(['name', 'url', 'price', 'date', 'extra'], {
 
 now sometimes we work with large files and iterating on every line and push to an array and then iterate again from your side to use the parsed data is ressource consuming.
 
-for that you can use Javascript Generator Functions with the options ticks: true as follows
+for that you can use Javascript Generator Functions with the options `ticks: true` as follows
 
 ```
 const cursor = csv.read(['name', 'url', 'price', 'date', 'extra'], {
@@ -124,4 +124,44 @@ console.log(data)
     },
     ...
 ]
+```
+
+Note:
+
+as you may see in src/utils/splitLine.ts i created a custom parser for lines not depending on ; separator alone
+
+we may face a case when one columns has the delimiter ; but it's inside double quotes like "product 1 ; for product 2"
+
+so we have to ignore that delimiter and that's what this function do
+
+### writing data
+
+#### writing simplified
+writing data made simple, you just pass an array of objects and it's position in file will automatically recognized
+
+```
+await csv.write(['name', 'url', 'price', 'date'], [
+    { name: 'product 2', url: "exp.com/productPage/2", price: 69.96, date: new Date() },
+    ...
+])
+>>> test.csv
+name;url;price;date
+product 2;exp.com/productPage/2;69.96;Mon Nov 22 2021 15:01:59 GMT+0100 (GMT+01:00)
+```
+
+#### dynamic writing
+optionally, this function can handle new columns of data that dont exist in file's headers
+
+for that you can use the option `dynamic: true` to let the function know you want dynamic headers
+
+Note: this functionality is resourse consuming as it write the whole file again instead of appending
+
+```
+await csv.write(['name', 'url', 'price', 'date', 'newHeader'], [
+    { name: 'product 3', url: "exp.com/productPage/3", price: 69.96, date: new Date(), newHeader: 'newData' },
+    ...
+])
+>>> test.csv
+name;url;price;date;newHeader
+product 2;exp.com/productPage/2;69.96;Mon Nov 22 2021 15:01:59 GMT+0100 (GMT+01:00);newData
 ```
