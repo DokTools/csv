@@ -24,7 +24,9 @@ const csv = new CSV('./files/test.csv', {
 #### data retrieving
 to read from file we use:
 
-`const data = await csv.read(['name', 'url', 'price', 'date', 'extra'])`
+```
+const data = await csv.read(['name', 'url', 'price', 'date', 'extra'])
+```
 
 we get something like
 ```
