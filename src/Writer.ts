@@ -50,12 +50,12 @@ export default class Writer {
             }
             Writer.writeLine(o, `${line}\n`);
         }
+        rl.close();
         const allFieldsIndex = [...new Array(allFields.length).keys()];
         //time to append new data
         for (const json of data)
             Writer.writeLine(o, `${allFieldsIndex.map((index) => json[allFields[index]]).join(this.context.sep)}\n`);
         dynamic && fs.renameSync(tmpFile, this.context.filePath);
-        rl.close();
         return true;
     }
 }

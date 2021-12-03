@@ -86,6 +86,7 @@ export default class Reader {
             }
             pos += 1;
         }
+        rl.close()
         return data;
     }
 
@@ -104,6 +105,7 @@ export default class Reader {
             }
             pos += 1;
         }
+        rl.close()
     }
 
     /**

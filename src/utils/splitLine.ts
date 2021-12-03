@@ -10,6 +10,7 @@ export default function splitLine(line: string, sep: string) {
                     const newCol = columns.slice(pos, i + 1).join(sep);
                     columns.splice(pos, i - pos);
                     columns[pos] = newCol;
+                    break;
                 }
             }
         }
