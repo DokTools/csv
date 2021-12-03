@@ -46,7 +46,7 @@ console.log(data)
 ]
 ```
 
-in this case we had property extra empty because it's empty in the file, if you want to exclude it add an option excludeEmpty: true as follows
+in this case we had property extra empty because it's empty in the file, if you want to exclude it add an option `excludeEmpty: true` as follows
 ```
 const data = await csv.read(['name', 'url', 'price', 'date', 'extra'], {
     excludeEmpty: true
@@ -81,6 +81,8 @@ const data = await csv.read(['name', 'url', 'price', 'date', 'extra'], {
         date: 'date'
     }
 })
+```
+```
 console.log(data)
 >>>
 [
@@ -109,6 +111,8 @@ const data = await csv.read(['name', 'url', 'price', 'date', 'extra'], {
     // default: ['value']
     getters: ['value', 'pos', 'line', 'columns']
 })
+```
+```
 console.log(data)
 >>>
 [
@@ -146,6 +150,8 @@ await csv.write(['name', 'url', 'price', 'date'], [
     { name: 'product 2', url: "exp.com/productPage/2", price: 69.96, date: new Date() },
     ...
 ])
+```
+```
 >>> test.csv
 name;url;price;date
 product 2;exp.com/productPage/2;69.96;Mon Nov 22 2021 15:01:59 GMT+0100 (GMT+01:00)
@@ -163,6 +169,8 @@ await csv.write(['name', 'url', 'price', 'date', 'newHeader'], [
     { name: 'product 3', url: "exp.com/productPage/3", price: 69.96, date: new Date(), newHeader: 'newData' },
     ...
 ])
+```
+```
 >>> test.csv
 name;url;price;date;newHeader
 product 2;exp.com/productPage/2;69.96;Mon Nov 22 2021 15:01:59 GMT+0100 (GMT+01:00);newData
