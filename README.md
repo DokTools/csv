@@ -53,12 +53,12 @@ const data = await csv.read(['name', 'url', 'price', 'date', 'extra'], {
 })
 ```
 
-now sometimes we work with large files and iterating on every line and push to an array and then iterate again from your side to use the parsed data is ressource consuming.
+now sometimes we work with large files and iterating on every line and push to an array and then iterate again from your side to use the parsed data is resource consuming.
 
-for that you can use Javascript Generator Functions with the options `ticks: true` as follows
+for that you can use Javascript Generator Functions with the option `ticks: true` as follows
 
 ```
-const cursor = csv.read(['name', 'url', 'price', 'date', 'extra'], {
+const cursor = await csv.read(['name', 'url', 'price', 'date', 'extra'], {
     ticks: true
 });
 while (true) {
@@ -87,7 +87,12 @@ console.log(data)
 >>>
 [
     {
-        value: { name: 'product 1', url: 'example.com/productPage', price: 99.99, date: 2021-11-22T14:01:59.000Z }
+        value: {
+            name: 'product 1', 
+            url: 'example.com/productPage', 
+            price: 99.99, 
+            date: 2021-11-22T14:01:59.000Z
+        }
     },
     ...
 ]
@@ -98,7 +103,7 @@ by default you get an object with property `value` containing the columns data.
 
 additionally you can get `pos, line, columns`
 
-`pos` refers to line position in the file making it easier for you for debugging
+`pos` refers to line position in the file making it easier for debugging
 
 `line` returns the whole line
 
@@ -143,7 +148,7 @@ so we have to ignore that delimiter and that's what this function do
 ### writing data
 
 #### writing simplified
-writing data made simple, you just pass an array of objects and it's position in file will automatically recognized
+writing data made simple, you just pass an array of objects and the header positions in the file will be automatically recognized
 
 ```
 await csv.write(['name', 'url', 'price', 'date'], [
@@ -160,13 +165,19 @@ product 2;exp.com/productPage/2;69.96;Mon Nov 22 2021 15:01:59 GMT+0100 (GMT+01:
 #### dynamic writing
 optionally, this function can handle new columns of data that dont exist in file's headers
 
-for that you can use the option `dynamic: true` to let the function know you want dynamic headers
+for that you can use the option `dynamic: true` to let the function know that you want dynamic headers
 
-Note: this functionality is resourse consuming as it write the whole file again instead of appending
+Note: this functionality is resource consuming as it write the whole file again instead of appending
 
 ```
 await csv.write(['name', 'url', 'price', 'date', 'newHeader'], [
-    { name: 'product 3', url: "exp.com/productPage/3", price: 69.96, date: new Date(), newHeader: 'newData' },
+    {
+        name: 'product 3',
+        url: "exp.com/productPage/3",
+        price: 69.96,
+        date: new Date(),
+        newHeader: 'newData'
+    },
     ...
 ])
 ```
