@@ -2,12 +2,14 @@ import readline from "readline";
 import utils from './utils'
 import CSV from ".";
 import dataGetters from './dataGetters';
+import { setRawDataTypes } from "./utils/types/detectRawDataType";
 
 export interface ReadOptions {
     excludeEmpty?: boolean;
     types?: any;
     ticks?: boolean;
     getters?: any;
+    detectType?: boolean;
 }
 
 export interface ObjectOfStrings {
@@ -37,13 +39,17 @@ export default class Reader {
     }
 
     typesToParsers: FunctionOfStringParam = {
+        string: (value) => value,
         number: parseFloat,
-        date: (value: any) => {
-            if (/\d+$/.test(value)) {
-                value = parseInt(value);
+        date: (value: unknown) => {
+            if (/\d+$/.test(value as string)) {
+                value = parseInt(value as string);
             }
-            return new Date(value);
+            return new Date(value as any);
         },
+        json: (value: string) => {
+            return JSON.parse(value)
+        }
     };
 
     defaultGetters: string[] = ['value'];
@@ -61,51 +67,56 @@ export default class Reader {
         return info;
     }
 
-    async readLine(line: string, pos: number, options: ReadOptions) {
+    async *readGenerator(rl: readline.Interface): AsyncGenerator<string> {
+        for await (const line of rl) {
+            yield line;
+        }
+        rl.close();
+    }
+
+    getLineData(line: string, pos: number) {
         const columns = utils.splitLine(line, this.context.sep);
         const data = {
             columns,
             line,
             pos
         };
-        return (this.lineResolvers[pos] || this.defaultLineParser).bind(this.context)(data, options);
-    }
-
-    /**
-     *
-     * @param {readline.ReadLine}
-     * @return {Array<Object>}
-     */
-    async readNormal(rl: readline.Interface, options: ReadOptions) {
-        const data: InfoInterface[] = [];
-        let pos = 0;
-        for await (const line of rl) {
-            const info = await this.readLine(line, pos, options);
-            if (info) {
-                data.push(info);
-            }
-            pos += 1;
-        }
-        rl.close()
         return data;
     }
 
-    /**
-     *
-     * @param rl
-     * @param options
-     * @return {AsyncGenerator}
-     */
-    async *readTicks(rl: readline.Interface, options: ReadOptions) {
-        let pos = 0;
-        for await (const line of rl) {
-            const info = await this.readLine(line, pos, options);
-            if (info) {
-                yield info;
+    async parseLine(line: string, pos: number, options: ReadOptions) {
+        const data = this.getLineData(line, pos);
+        return this.defaultLineParser.bind(this.context)(data, options);
+    }
+
+    async readNormal(gen: AsyncGenerator<string>, options: ReadOptions) {
+        const data: InfoInterface[] = [];
+        for await (const info of this.readTicks(gen, options)) {
+            data.push(info);
+        }
+        return data;
+    }
+
+    async *readTicks(gen: AsyncGenerator<string>, options: ReadOptions) {
+        let pos = 1; //we start from the second line
+        const firstDataLine = (await gen.next()).value;
+        const info = await this.parseLine(firstDataLine, pos++, options);
+        //set raw data types
+        if (options.detectType) {
+            if (!options.getters.includes('value')) {
+                throw new Error("value should be parsed to detect type!")
             }
+            options.types = {
+                ...options.types,
+                ...setRawDataTypes.bind(this.context)({ data: info, options })
+            }
+        }
+        yield info
+        for await (const line of gen) {
+            const info = await this.parseLine(line, pos, options);
+            yield info;
             pos += 1;
         }
-        rl.close()
     }
 
     /**
@@ -120,11 +131,16 @@ export default class Reader {
      */
     async read(fields: string[], options: ReadOptions = { excludeEmpty: false, types: {} }): Promise<any> {
         if (!options.getters) options.getters = this.defaultGetters;
+        if (!options.types) options.types = {};
         this.context.setFields(fields);
         const rl = utils.createInterface(this.context.filePath)
+        const gen = await this.readGenerator(rl)
+        //getting the headers
+        const tick = await gen.next()
+        this.context.setFieldsIndex(this.getLineData(tick.value, 0))
         if (options.ticks) {
-            return this.readTicks(rl, options);
+            return this.readTicks(gen, options);
         }
-        return this.readNormal(rl, options);
+        return this.readNormal(gen, options);
     }
 }

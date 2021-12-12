@@ -56,6 +56,7 @@ export default class Writer {
         for (const json of data)
             Writer.writeLine(o, `${allFieldsIndex.map((index) => json[allFields[index]]).join(this.context.sep)}\n`);
         dynamic && fs.renameSync(tmpFile, this.context.filePath);
+        fs.closeSync(o)
         return true;
     }
 }
