@@ -1,5 +1,5 @@
 import CSV from ".";
-import detectRawDataType from "./utils/types/detectRawDataType";
+import detectRawDataType, { typesToParsers } from "./utils/types/detectRawDataType";
 
 type FunctionReturn = unknown
 
@@ -15,9 +15,9 @@ function value(this: CSV, { data, options }: any): FunctionReturn {
             const key = this.fields[position];
             const { types } = options;
             if (value) {
-                const type = types && types[key] && typeof this.reader.typesToParsers[types[key]] === 'function' ? types[key] : undefined;
-                if(type){
-                    value = this.reader.typesToParsers[type](value);
+                const type = types && types[key] && typeof typesToParsers[types[key]] === 'function' ? types[key] : undefined;
+                if (type) {
+                    value = typesToParsers[type](value);
                 }
             }
             _value[key] = value;

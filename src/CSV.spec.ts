@@ -2,9 +2,9 @@ import CSV from '.'
 
 it('Read from file', async function () {
     const csv = new CSV('./files/test.csv');
-    const data = await csv.read(['name', 'url', 'price', 'date'], {
+    const data = await csv.read(['name', 'url', 'price', 'date', 'extra'], {
         excludeEmpty: true,
-        // ticks: true,
+        ticks: true,
         /* types: {
             price: 'number',
             date: 'date'
@@ -12,13 +12,12 @@ it('Read from file', async function () {
         detectType: true,
         getters: ['value', 'pos']
     });
-    console.log(data)
-    /* while (true) {
+    while (true) {
         const tick = await data.next()
         if (tick.done) break
-        const { _value: info, pos } = tick.value
-        console.log(tick.value)
-    } */
+        const { value: info, pos } = tick.value
+        console.log(info)
+    }
 })
 
 /* it('Write to file', async function () {

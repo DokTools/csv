@@ -26,10 +26,6 @@ export interface DataInterface {
     line?: string;
 }
 
-interface FunctionOfStringParam {
-    [name: string]: (value: string) => any;
-}
-
 export default class Reader {
     context: CSV;
     lineResolvers: any[] = [];
@@ -37,20 +33,6 @@ export default class Reader {
         this.context = context;
         this.lineResolvers[0] = this.context.setFieldsIndex;
     }
-
-    typesToParsers: FunctionOfStringParam = {
-        string: (value) => value,
-        number: parseFloat,
-        date: (value: unknown) => {
-            if (/\d+$/.test(value as string)) {
-                value = parseInt(value as string);
-            }
-            return new Date(value as any);
-        },
-        json: (value: string) => {
-            return JSON.parse(value)
-        }
-    };
 
     defaultGetters: string[] = ['value'];
 
@@ -111,7 +93,7 @@ export default class Reader {
                 ...setRawDataTypes.bind(this.context)({ data: info, options })
             }
         }
-        yield info
+        yield await this.parseLine(firstDataLine, pos++, options) //parse first line for a second time
         for await (const line of gen) {
             const info = await this.parseLine(line, pos, options);
             yield info;
