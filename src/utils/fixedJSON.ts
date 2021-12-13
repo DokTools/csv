@@ -1,3 +1,4 @@
+//https://stackoverflow.com/questions/9637517/parsing-relaxed-json-without-eval
 export default function fixedJSON(str: string) {
     return JSON.parse(
         str
