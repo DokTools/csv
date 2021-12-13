@@ -28,7 +28,7 @@ function value(this: CSV, { data, options }: any): FunctionReturn {
 
 
 function pos({ data: { pos } }: any): FunctionReturn {
-    return pos + 1
+    return pos
 }
 
 function line({ data }: any): FunctionReturn {

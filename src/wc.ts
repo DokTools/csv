@@ -3,6 +3,7 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import readline from 'readline';
+import { ICSVDataSource } from './types';
 
 const platform = os.platform();
 
@@ -18,33 +19,35 @@ interface WcOptions {
 
 /**
  *
- * @param {string} filePath
+ * @param {string} dataSource
  * @param {object} options
  * @param {boolean} l lines
  * @param {boolean} w words
  * @param {boolean} c chars
  * @returns
  */
-export default async function wc(filePath: string, options: WcOptions) {
+export default async function wc(dataSource: string | ICSVDataSource, options: WcOptions) {
   const fields = Object.entries(options)
     .filter(([key, value]) => value && optionToIndex[key] !== undefined)
     .map(([key, value]) => {
       return key;
     })
     .sort((a, b) => optionToIndex[a] - optionToIndex[b]);
-  if (platform === 'win32') {
-    const readStream = fs.createReadStream(path.resolve(filePath));
-    const rl = readline.createInterface({
-      input: readStream,
+  if (platform === 'win32' || typeof dataSource !== 'string') {
+    const rl = dataSource === 'string' ? readline.createInterface({
+      input: fs.createReadStream(path.resolve(dataSource)),
       crlfDelay: Infinity,
-    });
+    }) : dataSource;
     const r: any = { l: 0, w: 0, c: 0 };
     for await (const line of rl) {
       if (options.l) r.l++;
       if (options.w) r.w += line.split(/\s+/).length;
+      if (options.c) r.c += line.length + 1; // 1 for \n
     }
-    const stats = fs.statSync(filePath);
-    if (options.c) r.c += stats.size;
+    if (typeof dataSource === 'string') {
+      const stats = fs.statSync(dataSource);
+      if (options.c) r.c = stats.size;
+    }
     const toReturn: any = {};
     for (const field of fields) {
       toReturn[field] = r[field];
@@ -52,7 +55,7 @@ export default async function wc(filePath: string, options: WcOptions) {
     return toReturn;
   }
 
-  const cmd = `wc ${fields.map((x) => `-${x}`).join(' ')} "${filePath}"`;
+  const cmd = `wc ${fields.map((x) => `-${x}`).join(' ')} "${dataSource}"`;
   const stdout = execSync(cmd).toString().trim();
   const splited = stdout.split(/\s{1,}/);
   const toReturn: any = {};

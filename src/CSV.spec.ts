@@ -1,8 +1,12 @@
 import CSV from '.'
+import readline from 'readline'
+import fs from 'fs'
 
 it('Read from file', async function () {
-    const csv = new CSV('./files/test.csv');
-    const data = await csv.read(['name', 'url', 'price', 'date', 'extra'], {
+    const csv = new CSV(readline.createInterface({
+        input: fs.createReadStream('./files/test.csv')
+    }));
+    const data = await csv.read(['name', 'url', 'price', 'date', 'extra', 'ean'], {
         excludeEmpty: true,
         ticks: true,
         /* types: {
@@ -10,13 +14,13 @@ it('Read from file', async function () {
             date: 'date'
         }, */
         detectType: true,
-        getters: ['value', 'pos']
+        getters: ['value', 'pos'],
     });
     while (true) {
         const tick = await data.next()
         if (tick.done) break
         const { value: info, pos } = tick.value
-        console.log(info)
+        console.log(tick.value)
     }
 })
 

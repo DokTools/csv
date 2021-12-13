@@ -3,6 +3,7 @@ import utils from './utils'
 import CSV from ".";
 import dataGetters from './dataGetters';
 import { setRawDataTypes } from "./utils/types/detectRawDataType";
+import { ICSVDataSource } from "./types";
 
 export interface ReadOptions {
     excludeEmpty?: boolean;
@@ -10,6 +11,7 @@ export interface ReadOptions {
     ticks?: boolean;
     getters?: any;
     detectType?: boolean;
+    readInterface?: readline.Interface
 }
 
 export interface ObjectOfStrings {
@@ -29,9 +31,13 @@ export interface DataInterface {
 export default class Reader {
     context: CSV;
     lineResolvers: any[] = [];
-    constructor(context: CSV) {
+    readInterface?: readline.Interface
+    constructor(context: CSV, props: { dataSource?: ICSVDataSource }) {
         this.context = context;
         this.lineResolvers[0] = this.context.setFieldsIndex;
+        if (typeof props.dataSource !== 'string') {
+            this.readInterface = props.dataSource;
+        }
     }
 
     defaultGetters: string[] = ['value'];
@@ -49,10 +55,12 @@ export default class Reader {
         return info;
     }
 
-    async *readGenerator(rl: readline.Interface): AsyncGenerator<string> {
+    async *readGenerator(rl: readline.Interface | undefined): AsyncGenerator<string> {
+        if (!rl) return false;
         for await (const line of rl) {
             yield line;
         }
+        this.readInterface = undefined;
         rl.close();
     }
 
@@ -102,6 +110,24 @@ export default class Reader {
     }
 
     /**
+     * pauses readline interface
+     */
+    pause() {
+        if (this.readInterface) {
+            this.readInterface.pause()
+        }
+    }
+
+    /**
+     * resumes readline interface
+     */
+    resume() {
+        if (this.readInterface) {
+            this.readInterface.resume()
+        }
+    }
+
+    /**
      *
      * @param {Array} fields
      * @param {Object} options additional options
@@ -114,9 +140,14 @@ export default class Reader {
     async read(fields: string[], options: ReadOptions = { excludeEmpty: false, types: {} }): Promise<any> {
         if (!options.getters) options.getters = this.defaultGetters;
         if (!options.types) options.types = {};
+        if (typeof this.context.dataSource === 'string') {
+            options.readInterface = utils.createInterface(this.context.dataSource)
+            this.readInterface = options.readInterface;
+        } else {
+            this.readInterface = this.context.dataSource;
+        }
         this.context.setFields(fields);
-        const rl = utils.createInterface(this.context.filePath)
-        const gen = await this.readGenerator(rl)
+        const gen = this.readGenerator(this.readInterface)
         //getting the headers
         const tick = await gen.next()
         this.context.setFieldsIndex(this.getLineData(tick.value, 0))

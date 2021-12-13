@@ -26,14 +26,17 @@ export default class Writer {
      * @returns
      */
     async write(fields: string[], data: any[], options: WriteOptions = { dynamic: false }) {
-        const { dynamic } = options;
-        if (!fs.existsSync(this.context.filePath) || fs.statSync(this.context.filePath).size === 0) {
-            fs.writeFileSync(this.context.filePath, `${fields.join(this.context.sep)}\n`);
+        if(typeof this.context.dataSource !== 'string') {
+            throw new Error("Cannot write to read only interface")
         }
-        const rl = utils.createInterface(this.context.filePath)
+        const { dynamic } = options;
+        if (!fs.existsSync(this.context.dataSource) || fs.statSync(this.context.dataSource).size === 0) {
+            fs.writeFileSync(this.context.dataSource, `${fields.join(this.context.sep)}\n`);
+        }
+        const rl = utils.createInterface(this.context.dataSource)
         const allFields: string[] = [];
-        const tmpFile = `${this.context.filePath}.tmp`;
-        const o = fs.openSync.apply(null, dynamic ? [tmpFile, 'w+'] : [this.context.filePath, 'a+']);
+        const tmpFile = `${this.context.dataSource}.tmp`;
+        const o = fs.openSync.apply(null, dynamic ? [tmpFile, 'w+'] : [this.context.dataSource, 'a+']);
         let pos = 0;
         for await (const line of rl) {
             if (pos++ === 0) {
@@ -55,7 +58,7 @@ export default class Writer {
         //time to append new data
         for (const json of data)
             Writer.writeLine(o, `${allFieldsIndex.map((index) => json[allFields[index]]).join(this.context.sep)}\n`);
-        dynamic && fs.renameSync(tmpFile, this.context.filePath);
+        dynamic && fs.renameSync(tmpFile, this.context.dataSource);
         fs.closeSync(o)
         return true;
     }

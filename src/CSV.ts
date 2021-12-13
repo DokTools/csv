@@ -1,24 +1,26 @@
 import wc from './wc';
 import Reader, { DataInterface, ReadOptions } from './Reader';
 import Writer, { WriteOptions } from './Writer';
+import { ReadLine } from 'readline';
+import { ICSVDataSource } from './types';
 
 interface CSVOptions {
   sep?: string;
 }
 
 export default class CSV {
-  filePath: string;
+  dataSource: ICSVDataSource;
   fields: string[];
   fieldsIndex: number[];
   sep: string;
   reader: Reader;
   writer: Writer;
-  constructor(filePath: string, options?: CSVOptions) {
-    this.filePath = filePath;
+  constructor(dataSource: ICSVDataSource, options?: CSVOptions) {
+    this.dataSource = dataSource;
     this.fields = [];
     this.fieldsIndex = [];
     this.sep = (options && options.sep) || ';';
-    this.reader = new Reader(this);
+    this.reader = new Reader(this, { dataSource });
     this.writer = new Writer(this);
   }
 
@@ -34,15 +36,23 @@ export default class CSV {
   }
 
   async getLines() {
-    return (await wc(this.filePath, { l: true })).l - 1;
+    return (await wc(this.dataSource, { l: true })).l - 1;
   }
 
   async getWords() {
-    return (await wc(this.filePath, { w: true })).w;
+    return (await wc(this.dataSource, { w: true })).w;
   }
 
   async read(fields: string[], options?: ReadOptions) {
     return this.reader.read(fields, options);
+  }
+
+  pause() {
+    this.reader.pause()
+  }
+
+  resume() {
+    this.reader.resume()
   }
 
   async write(fields: string[], data: any[], options?: WriteOptions) {
