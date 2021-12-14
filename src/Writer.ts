@@ -26,7 +26,7 @@ export default class Writer {
      * @returns
      */
     async write(fields: string[], data: any[], options: WriteOptions = { dynamic: false }) {
-        if(typeof this.context.dataSource !== 'string') {
+        if (typeof this.context.dataSource !== 'string') {
             throw new Error("Cannot write to read only interface")
         }
         const { dynamic } = options;
@@ -34,6 +34,9 @@ export default class Writer {
             fs.writeFileSync(this.context.dataSource, `${fields.join(this.context.sep)}\n`);
         }
         const rl = utils.createInterface(this.context.dataSource)
+        if (!rl) {
+            throw new Error("Cannot write into readable stream")
+        }
         const allFields: string[] = [];
         const tmpFile = `${this.context.dataSource}.tmp`;
         const o = fs.openSync.apply(null, dynamic ? [tmpFile, 'w+'] : [this.context.dataSource, 'a+']);

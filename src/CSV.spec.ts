@@ -3,10 +3,11 @@ import readline from 'readline'
 import fs from 'fs'
 
 it('Read from file', async function () {
-    const csv = new CSV(readline.createInterface({
-        input: fs.createReadStream('./files/test.csv')
-    }));
-    const data = await csv.read(['name', 'url', 'price', 'date', 'extra', 'ean'], {
+    const csv = new CSV({
+        readStream: fs.createReadStream('./files/test.csv')
+    });
+    // console.log(await csv.getLines())
+    const data = await csv.read(['name', 'url', 'price', 'date', 'extra'], {
         excludeEmpty: true,
         ticks: true,
         /* types: {

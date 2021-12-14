@@ -3,7 +3,9 @@ import utils from './utils'
 import CSV from ".";
 import dataGetters from './dataGetters';
 import { setRawDataTypes } from "./utils/types/detectRawDataType";
-import { ICSVDataSource } from "./types";
+import { ICSVDataPair, ICSVDataSource } from "./types";
+import { createInterfaceFromStream } from "./utils/createInterface";
+import { ReadStream } from "fs";
 
 export interface ReadOptions {
     excludeEmpty?: boolean;
@@ -11,7 +13,6 @@ export interface ReadOptions {
     ticks?: boolean;
     getters?: any;
     detectType?: boolean;
-    readInterface?: readline.Interface
 }
 
 export interface ObjectOfStrings {
@@ -35,8 +36,12 @@ export default class Reader {
     constructor(context: CSV, props: { dataSource?: ICSVDataSource }) {
         this.context = context;
         this.lineResolvers[0] = this.context.setFieldsIndex;
-        if (typeof props.dataSource !== 'string') {
-            this.readInterface = props.dataSource;
+        if (props.dataSource && typeof props.dataSource !== 'string') {
+            if (props.dataSource.readStream) {
+                this.readInterface = readline.createInterface({
+                    input: props.dataSource.readStream
+                });
+            }
         }
     }
 
@@ -90,7 +95,7 @@ export default class Reader {
     async *readTicks(gen: AsyncGenerator<string>, options: ReadOptions) {
         let pos = 1; //we start from the second line
         const firstDataLine = (await gen.next()).value;
-        const info = await this.parseLine(firstDataLine, pos++, options);
+        const firstDataInfo = await this.parseLine(firstDataLine, pos++, options);
         //set raw data types
         if (options.detectType) {
             if (!options.getters.includes('value')) {
@@ -98,7 +103,7 @@ export default class Reader {
             }
             options.types = {
                 ...options.types,
-                ...setRawDataTypes.bind(this.context)({ data: info, options })
+                ...setRawDataTypes.bind(this.context)({ data: firstDataInfo, options })
             }
         }
         yield await this.parseLine(firstDataLine, pos++, options) //parse first line for a second time
@@ -140,12 +145,11 @@ export default class Reader {
     async read(fields: string[], options: ReadOptions = { excludeEmpty: false, types: {} }): Promise<any> {
         if (!options.getters) options.getters = this.defaultGetters;
         if (!options.types) options.types = {};
-        if (typeof this.context.dataSource === 'string') {
-            options.readInterface = utils.createInterface(this.context.dataSource)
-            this.readInterface = options.readInterface;
-        } else {
-            this.readInterface = this.context.dataSource;
+        const rl = utils.createInterface(this.context.dataSource)
+        if (!rl) {
+            throw new Error("dataSource should be a string or an object with readStream property!")
         }
+        this.readInterface = rl;
         this.context.setFields(fields);
         const gen = this.readGenerator(this.readInterface)
         //getting the headers

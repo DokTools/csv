@@ -29,7 +29,7 @@ interface FunctionOfStringParam {
 
 export const typesToParsers: FunctionOfStringParam = {
     string: (value) => value,
-    number: parseFloat,
+    number: (value: string) => parseFloat(JSON.parse(value)),//JSON.parse(value) is for getting numbers inside quotes like "1.2"
     date: (value: unknown) => {
         if (/\d+$/.test(value as string)) {
             value = parseInt(value as string);

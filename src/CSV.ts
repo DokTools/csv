@@ -1,7 +1,6 @@
 import wc from './wc';
 import Reader, { DataInterface, ReadOptions } from './Reader';
 import Writer, { WriteOptions } from './Writer';
-import { ReadLine } from 'readline';
 import { ICSVDataSource } from './types';
 
 interface CSVOptions {
